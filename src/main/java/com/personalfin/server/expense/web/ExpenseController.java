@@ -1,0 +1,100 @@
+package com.personalfin.server.expense.web;
+
+import com.personalfin.server.expense.dto.CategorySpendingSummary;
+import com.personalfin.server.expense.dto.ExpenseCreateRequest;
+import com.personalfin.server.expense.dto.ExpenseCreateResponse;
+import com.personalfin.server.expense.dto.ExpenseHeatmapPoint;
+import com.personalfin.server.expense.dto.ExpenseResponse;
+import com.personalfin.server.expense.dto.SpendingPattern;
+import com.personalfin.server.expense.service.ExpenseAnalyticsService;
+import com.personalfin.server.expense.service.ExpenseService;
+import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.util.List;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/expenses")
+public class ExpenseController {
+
+    private final ExpenseService expenseService;
+    private final ExpenseAnalyticsService analyticsService;
+
+    public ExpenseController(ExpenseService expenseService, ExpenseAnalyticsService analyticsService) {
+        this.expenseService = expenseService;
+        this.analyticsService = analyticsService;
+    }
+
+    @PostMapping
+    public ResponseEntity<ExpenseResponse> create(@Valid @RequestBody ExpenseCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(expenseService.createExpense(request));
+    }
+
+    @PostMapping("/with-coach")
+    public ResponseEntity<ExpenseCreateResponse> createWithCoach(@Valid @RequestBody ExpenseCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(expenseService.createExpenseWithCoach(request));
+    }
+
+    @GetMapping
+    public List<ExpenseResponse> list() {
+        return expenseService.listAll();
+    }
+
+    @GetMapping("/heatmap")
+    public List<ExpenseHeatmapPoint> heatmap(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+        return expenseService.heatmap(start, end);
+    }
+
+    @GetMapping("/analytics/categories")
+    public List<CategorySpendingSummary> getCategorySpending(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+        return analyticsService.getCategorySpending(start, end);
+    }
+
+    @GetMapping("/analytics/patterns")
+    public List<SpendingPattern> getSpendingPatterns(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+        return analyticsService.detectOverlaps(start, end);
+    }
+
+    @GetMapping("/analytics/weekly")
+    public List<SpendingPattern> getWeeklyPatterns(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+        return analyticsService.getWeeklyPatterns(start, end);
+    }
+
+    @GetMapping("/analytics/recurring")
+    public List<SpendingPattern> getRecurringExpenses(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
+            @RequestParam(required = false) String category) {
+        if (category != null) {
+            return analyticsService.getRecurringExpenses(start, end, category);
+        }
+        return analyticsService.detectOverlaps(start, end);
+    }
+
+    @GetMapping("/analytics/comparison")
+    public java.util.Map<String, Object> getMonthlyComparison(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month1Start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month1End,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month2Start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month2End) {
+        return analyticsService.getMonthlyComparison(month1Start, month1End, month2Start, month2End);
+    }
+}
+
