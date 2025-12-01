@@ -84,7 +84,9 @@ public class BudgetController {
         if (date == null) {
             date = LocalDate.now();
         }
-        return ResponseEntity.ok(budgetService.getDailyLimit(date));
+        DailySpendLimitResponse response = budgetService.getDailyLimit(date);
+        // If no budget exists, still return 200 OK with zero values
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/coach")
@@ -103,6 +105,7 @@ public class BudgetController {
         return ResponseEntity.ok(message);
     }
 }
+
 
 
 

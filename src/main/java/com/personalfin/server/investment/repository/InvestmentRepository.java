@@ -22,3 +22,5 @@ public interface InvestmentRepository extends JpaRepository<Investment, UUID> {
 
 
 
+
+

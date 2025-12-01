@@ -1,9 +1,11 @@
 package com.personalfin.server.preferences.service;
 
+import com.personalfin.server.auth.util.SecurityUtils;
 import com.personalfin.server.preferences.dto.UserPreferencesRequest;
 import com.personalfin.server.preferences.dto.UserPreferencesResponse;
 import com.personalfin.server.preferences.model.UserPreferences;
 import com.personalfin.server.preferences.repository.UserPreferencesRepository;
+import com.personalfin.server.user.service.UserService;
 import jakarta.transaction.Transactional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -12,13 +14,20 @@ import org.springframework.stereotype.Service;
 public class UserPreferencesService {
 
     private final UserPreferencesRepository preferencesRepository;
+    private final UserService userService;
 
-    public UserPreferencesService(UserPreferencesRepository preferencesRepository) {
+    public UserPreferencesService(UserPreferencesRepository preferencesRepository, UserService userService) {
         this.preferencesRepository = preferencesRepository;
+        this.userService = userService;
     }
 
     @Transactional
-    public UserPreferencesResponse getOrCreate(String userId) {
+    public UserPreferencesResponse getOrCreate() {
+        UUID userId = SecurityUtils.getCurrentUserId(userService);
+        if (userId == null) {
+            throw new IllegalStateException("User not authenticated");
+        }
+        
         return preferencesRepository.findByUserId(userId)
                 .map(this::toResponse)
                 .orElseGet(() -> {
@@ -31,7 +40,12 @@ public class UserPreferencesService {
     }
 
     @Transactional
-    public UserPreferencesResponse update(String userId, UserPreferencesRequest request) {
+    public UserPreferencesResponse update(UserPreferencesRequest request) {
+        UUID userId = SecurityUtils.getCurrentUserId(userService);
+        if (userId == null) {
+            throw new IllegalStateException("User not authenticated");
+        }
+        
         UserPreferences preferences = preferencesRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     UserPreferences newPrefs = new UserPreferences();
@@ -46,13 +60,13 @@ public class UserPreferencesService {
             preferences.setCurrency(request.currency());
         }
 
-        return toResponse(preferences);
+        return toResponse(preferencesRepository.save(preferences));
     }
 
     private UserPreferencesResponse toResponse(UserPreferences preferences) {
         return new UserPreferencesResponse(
                 preferences.getId(),
-                preferences.getUserId(),
+                preferences.getUserId().toString(),
                 preferences.getTheme(),
                 preferences.getCurrency(),
                 preferences.getCreatedAt(),

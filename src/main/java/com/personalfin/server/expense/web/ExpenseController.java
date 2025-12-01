@@ -8,6 +8,7 @@ import com.personalfin.server.expense.dto.ExpenseResponse;
 import com.personalfin.server.expense.dto.SpendingPattern;
 import com.personalfin.server.expense.service.ExpenseAnalyticsService;
 import com.personalfin.server.expense.service.ExpenseService;
+import com.personalfin.server.expense.service.ExpensePdfExportService;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -27,10 +28,14 @@ public class ExpenseController {
 
     private final ExpenseService expenseService;
     private final ExpenseAnalyticsService analyticsService;
+    private final ExpensePdfExportService pdfExportService;
 
-    public ExpenseController(ExpenseService expenseService, ExpenseAnalyticsService analyticsService) {
+    public ExpenseController(ExpenseService expenseService,
+                             ExpenseAnalyticsService analyticsService,
+                             ExpensePdfExportService pdfExportService) {
         this.expenseService = expenseService;
         this.analyticsService = analyticsService;
+        this.pdfExportService = pdfExportService;
     }
 
     @PostMapping
@@ -95,6 +100,19 @@ public class ExpenseController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month2Start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month2End) {
         return analyticsService.getMonthlyComparison(month1Start, month1End, month2Start, month2End);
+    }
+
+    @GetMapping("/export/pdf")
+    public ResponseEntity<byte[]> exportPdf(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+
+        byte[] pdfBytes = pdfExportService.exportExpenses(start, end);
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/pdf")
+                .header("Content-Disposition", "attachment; filename=\"transactions.pdf\"")
+                .body(pdfBytes);
     }
 }
 

@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserPreferencesRepository extends JpaRepository<UserPreferences, UUID> {
 
-    Optional<UserPreferences> findByUserId(String userId);
+    Optional<UserPreferences> findByUserId(UUID userId);
 }
 
 
