@@ -27,3 +27,4 @@ CREATE INDEX idx_investments_maturity_date
 
 
 
+

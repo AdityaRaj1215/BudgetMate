@@ -183,3 +183,4 @@ GET http://localhost:8080/api/expenses/heatmap?start=2025-11-01&end=2025-11-30
 
 
 
+

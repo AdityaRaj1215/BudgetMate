@@ -22,3 +22,4 @@ CREATE INDEX idx_expense_groups_user_id ON expense_groups (user_id);
 
 
 
+
