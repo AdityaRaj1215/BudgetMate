@@ -1,5 +1,6 @@
 package com.personalfin.server.user.service;
 
+import com.personalfin.server.security.validation.PasswordValidator;
 import com.personalfin.server.user.model.Role;
 import com.personalfin.server.user.model.User;
 import com.personalfin.server.user.repository.UserRepository;
@@ -15,14 +16,22 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordValidator passwordValidator;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, PasswordValidator passwordValidator) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.passwordValidator = passwordValidator;
     }
 
     @Transactional
     public User createUser(String username, String email, String password) {
+        // Validate password strength
+        PasswordValidator.PasswordValidationResult validationResult = passwordValidator.validate(password);
+        if (!validationResult.isValid()) {
+            throw new IllegalArgumentException(validationResult.getErrorMessage());
+        }
+
         if (userRepository.existsByUsername(username)) {
             throw new RuntimeException("Username already exists: " + username);
         }

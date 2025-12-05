@@ -3,6 +3,7 @@ package com.personalfin.server.config;
 import com.personalfin.server.auth.filter.JwtAuthenticationFilter;
 import com.personalfin.server.config.filter.RateLimitingFilter;
 import com.personalfin.server.config.SecurityHeadersConfig;
+import com.personalfin.server.security.filter.InputSanitizationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -35,15 +36,18 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final RateLimitingFilter rateLimitingFilter;
     private final SecurityHeadersConfig securityHeadersConfig;
+    private final InputSanitizationFilter inputSanitizationFilter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
                          UserDetailsService userDetailsService,
                          RateLimitingFilter rateLimitingFilter,
-                         SecurityHeadersConfig securityHeadersConfig) {
+                         SecurityHeadersConfig securityHeadersConfig,
+                         InputSanitizationFilter inputSanitizationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.userDetailsService = userDetailsService;
         this.rateLimitingFilter = rateLimitingFilter;
         this.securityHeadersConfig = securityHeadersConfig;
+        this.inputSanitizationFilter = inputSanitizationFilter;
     }
 
     @Bean
@@ -69,6 +73,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(inputSanitizationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(securityHeadersConfig, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
