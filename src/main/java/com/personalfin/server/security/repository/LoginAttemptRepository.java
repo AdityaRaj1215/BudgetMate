@@ -31,3 +31,4 @@ public interface LoginAttemptRepository extends JpaRepository<LoginAttempt, java
     List<LoginAttempt> findRecentAttemptsByIp(@Param("ipAddress") String ipAddress);
 }
 
+

@@ -27,3 +27,4 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
     List<AuditLog> findByUserIdAndEventType(@Param("userId") UUID userId, @Param("eventType") String eventType);
 }
 
+

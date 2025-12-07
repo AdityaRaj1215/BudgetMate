@@ -28,35 +28,30 @@ public class InputSanitizationFilter extends OncePerRequestFilter {
         for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
             String paramName = entry.getKey();
             String[] paramValues = entry.getValue();
-
-            // Check for SQL injection
+            
+            // Check parameter name
+            if (SecurityUtils.containsSqlInjection(paramName) ||
+                SecurityUtils.containsXss(paramName) ||
+                SecurityUtils.containsPathTraversal(paramName)) {
+                throw new SecurityException("Invalid parameter name detected");
+            }
+            
+            // Check parameter values
             for (String value : paramValues) {
-                if (SecurityUtils.containsSqlInjection(value)) {
-                    throw new SecurityException("Invalid input detected in parameter: " + paramName);
-                }
-                if (SecurityUtils.containsXss(value)) {
-                    throw new SecurityException("Invalid input detected in parameter: " + paramName);
-                }
-                if (SecurityUtils.containsPathTraversal(value)) {
-                    throw new SecurityException("Invalid input detected in parameter: " + paramName);
+                if (SecurityUtils.containsSqlInjection(value) ||
+                    SecurityUtils.containsXss(value) ||
+                    SecurityUtils.containsPathTraversal(value)) {
+                    throw new SecurityException("Invalid parameter value detected");
                 }
             }
         }
 
-        // Check path for path traversal
-        String path = request.getRequestURI();
-        if (SecurityUtils.containsPathTraversal(path)) {
+        // Check request URI for path traversal
+        String requestURI = request.getRequestURI();
+        if (SecurityUtils.containsPathTraversal(requestURI)) {
             throw new SecurityException("Invalid path detected");
         }
 
         filterChain.doFilter(request, response);
     }
-
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        // Skip filtering for actuator endpoints
-        String path = request.getRequestURI();
-        return path.startsWith("/actuator/");
-    }
 }
-
