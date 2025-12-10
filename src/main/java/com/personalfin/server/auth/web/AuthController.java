@@ -2,8 +2,11 @@ package com.personalfin.server.auth.web;
 
 import com.personalfin.server.auth.dto.LoginRequest;
 import com.personalfin.server.auth.dto.LoginResponse;
+import com.personalfin.server.auth.dto.OtpRequest;
+import com.personalfin.server.auth.dto.OtpResponse;
 import com.personalfin.server.auth.dto.RegisterRequest;
 import com.personalfin.server.auth.service.JwtTokenService;
+import com.personalfin.server.auth.service.OtpService;
 import com.personalfin.server.security.exception.AccountLockedException;
 import com.personalfin.server.security.service.AccountLockoutService;
 import com.personalfin.server.security.service.AuditLogService;
@@ -39,6 +42,7 @@ public class AuthController {
     private final UserService userService;
     private final AccountLockoutService accountLockoutService;
     private final AuditLogService auditLogService;
+    private final OtpService otpService;
 
     public AuthController(
             AuthenticationManager authenticationManager,
@@ -46,13 +50,15 @@ public class AuthController {
             UserDetailsService userDetailsService,
             UserService userService,
             AccountLockoutService accountLockoutService,
-            AuditLogService auditLogService) {
+            AuditLogService auditLogService,
+            OtpService otpService) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenService = jwtTokenService;
         this.userDetailsService = userDetailsService;
         this.userService = userService;
         this.accountLockoutService = accountLockoutService;
         this.auditLogService = auditLogService;
+        this.otpService = otpService;
     }
 
     private HttpServletRequest getHttpServletRequest() {
@@ -66,6 +72,9 @@ public class AuthController {
         String ipAddress = httpRequest != null ? SecurityUtils.getClientIpAddress(httpRequest) : "unknown";
         
         try {
+            // Verify OTP before creating account
+            otpService.verifyOtp(request.email(), request.otp());
+
             User user = userService.createUser(
                     request.username(),
                     request.email(),
@@ -87,6 +96,21 @@ public class AuthController {
         } catch (Exception e) {
             // Log failed registration
             auditLogService.logRegistration(request.username(), ipAddress, false, e.getMessage());
+            throw e;
+        }
+    }
+
+    @PostMapping("/register/otp")
+    public ResponseEntity<OtpResponse> requestOtp(@Valid @RequestBody OtpRequest request) {
+        HttpServletRequest httpRequest = getHttpServletRequest();
+        String ipAddress = httpRequest != null ? SecurityUtils.getClientIpAddress(httpRequest) : "unknown";
+
+        try {
+            OtpResponse response = otpService.generateOtp(request.email());
+            auditLogService.logRegistration(request.email(), ipAddress, true, "OTP generated");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            auditLogService.logRegistration(request.email(), ipAddress, false, e.getMessage());
             throw e;
         }
     }

@@ -2,6 +2,7 @@ package com.personalfin.server.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
@@ -15,7 +16,11 @@ public record RegisterRequest(
 
         @NotBlank(message = "Password is required")
         @Size(min = 8, message = "Password must be at least 8 characters")
-        String password
+        String password,
+
+        @NotBlank(message = "OTP is required")
+        @Pattern(regexp = "\\d{6}", message = "OTP must be a 6-digit code")
+        String otp
 ) {
 }
 
