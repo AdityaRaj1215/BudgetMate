@@ -1,5 +1,6 @@
 package com.personalfin.server.security.exception;
 
+import com.personalfin.server.expense.exception.ExpenseNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -111,6 +112,18 @@ public class GlobalExceptionHandler {
         response.put("timestamp", OffsetDateTime.now());
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(ExpenseNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleExpenseNotFoundException(ExpenseNotFoundException ex) {
+        logger.warn("Expense not found: {}", ex.getMessage());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("error", "Expense not found");
+        response.put("message", ex.getMessage());
+        response.put("timestamp", OffsetDateTime.now());
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
     @ExceptionHandler(RuntimeException.class)

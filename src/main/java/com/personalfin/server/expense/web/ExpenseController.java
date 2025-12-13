@@ -5,6 +5,7 @@ import com.personalfin.server.expense.dto.ExpenseCreateRequest;
 import com.personalfin.server.expense.dto.ExpenseCreateResponse;
 import com.personalfin.server.expense.dto.ExpenseHeatmapPoint;
 import com.personalfin.server.expense.dto.ExpenseResponse;
+import com.personalfin.server.expense.dto.ExpenseUpdateRequest;
 import com.personalfin.server.expense.dto.SpendingPattern;
 import com.personalfin.server.expense.service.ExpenseAnalyticsService;
 import com.personalfin.server.expense.service.ExpenseService;
@@ -12,11 +13,15 @@ import com.personalfin.server.expense.service.ExpensePdfExportService;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -52,6 +57,24 @@ public class ExpenseController {
     @GetMapping
     public List<ExpenseResponse> list() {
         return expenseService.listAll();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ExpenseResponse> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(expenseService.getById(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ExpenseResponse> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody ExpenseUpdateRequest request) {
+        return ResponseEntity.ok(expenseService.update(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        expenseService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/heatmap")

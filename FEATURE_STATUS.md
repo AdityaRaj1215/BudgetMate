@@ -25,25 +25,27 @@ This document tracks the implementation status of all planned features for the P
 
 ---
 
-### 2. Add/View Transactions (Manual Form) ✅
-**Status:** Partially Complete (Add & View done, Edit & Delete missing)
+### 2. Add/View/Edit/Delete Transactions (Manual Form) ✅
+**Status:** Complete
 
 **Endpoints:**
 - ✅ `POST /api/expenses` - Create new expense
 - ✅ `POST /api/expenses/with-coach` - Create expense with budget coach feedback
 - ✅ `GET /api/expenses` - List all expenses (sorted by date, newest first)
+- ✅ `GET /api/expenses/{id}` - Get single transaction details
+- ✅ `PUT /api/expenses/{id}` - Edit/update existing transaction
+- ✅ `DELETE /api/expenses/{id}` - Delete transaction
 
 **Features:**
 - ✅ Manual expense entry form
 - ✅ View all transactions
+- ✅ View single transaction
+- ✅ Edit/update transactions (partial updates supported)
+- ✅ Delete transactions
 - ✅ Transaction filtering by user (automatic)
-- ✅ Auto-categorization on creation
+- ✅ Auto-categorization on creation and update
 - ✅ Date, amount, description, merchant, payment method
-
-**Missing:**
-- ❌ `PUT /api/expenses/{id}` - Edit/update existing transaction
-- ❌ `DELETE /api/expenses/{id}` - Delete transaction
-- ❌ `GET /api/expenses/{id}` - Get single transaction details
+- ✅ Authorization checks (users can only access their own expenses)
 
 ---
 
@@ -207,17 +209,7 @@ This document tracks the implementation status of all planned features for the P
 
 ### High Priority
 
-1. **Edit Transactions**
-   - `PUT /api/expenses/{id}` - Update existing expense
-   - `PATCH /api/expenses/{id}` - Partial update
-   - Validation and authorization checks
-
-2. **Delete Transactions**
-   - `DELETE /api/expenses/{id}` - Delete expense
-   - Soft delete option (optional)
-   - Authorization checks
-
-3. **CSV Export**
+1. **CSV Export**
    - `GET /api/expenses/export/csv` - Export as CSV
    - Date range filtering
    - All transaction fields included
@@ -228,7 +220,7 @@ This document tracks the implementation status of all planned features for the P
 
 ### Medium Priority
 
-5. **Google OAuth Login (Optional)**
+4. **Google OAuth Login (Optional)**
    - OAuth2 integration with Google
    - Account linking
    - Token management
@@ -261,9 +253,9 @@ This document tracks the implementation status of all planned features for the P
 ### Phase 1: Core CRUD Operations (Critical)
 1. ✅ Add transaction - **DONE**
 2. ✅ View transactions - **DONE**
-3. ❌ Edit transaction - **TODO**
-4. ❌ Delete transaction - **TODO**
-5. ❌ Get single transaction - **TODO**
+3. ✅ Edit transaction - **DONE**
+4. ✅ Delete transaction - **DONE**
+5. ✅ Get single transaction - **DONE**
 
 ### Phase 2: Export & Data Management
 1. ✅ PDF export - **DONE**
@@ -284,22 +276,22 @@ This document tracks the implementation status of all planned features for the P
 ## Quick Stats
 
 - **Total Features:** 9
-- **Fully Implemented:** 6.5 (72%)
-- **Partially Implemented:** 1.5 (17%)
+- **Fully Implemented:** 7.5 (83%)
+- **Partially Implemented:** 0.5 (6%)
 - **Not Implemented:** 1 (11%)
 
 **Breakdown:**
-- ✅ Complete: 6 features
-- ⚠️ Partial: 2 features (Transactions CRUD, Export)
+- ✅ Complete: 7 features (Transactions CRUD now complete!)
+- ⚠️ Partial: 1 feature (Export - PDF done, CSV missing)
 - ❌ Missing: 1 feature (Offline sync - frontend)
 
 ---
 
 ## Next Steps
 
-1. **Implement Edit Transaction** (`PUT /api/expenses/{id}`)
-2. **Implement Delete Transaction** (`DELETE /api/expenses/{id}`)
-3. **Implement Get Single Transaction** (`GET /api/expenses/{id}`)
+1. ✅ **Implement Edit Transaction** (`PUT /api/expenses/{id}`) - **DONE**
+2. ✅ **Implement Delete Transaction** (`DELETE /api/expenses/{id}`) - **DONE**
+3. ✅ **Implement Get Single Transaction** (`GET /api/expenses/{id}`) - **DONE**
 4. **Implement CSV Export** (`GET /api/expenses/export/csv`)
 5. **Add Google OAuth** (if needed)
 6. **Add Backend Sync Endpoints** (if offline-first is required)

@@ -8,7 +8,9 @@ import com.personalfin.server.expense.dto.ExpenseCreateRequest;
 import com.personalfin.server.expense.dto.ExpenseCreateResponse;
 import com.personalfin.server.expense.dto.ExpenseHeatmapPoint;
 import com.personalfin.server.expense.dto.ExpenseResponse;
+import com.personalfin.server.expense.dto.ExpenseUpdateRequest;
 import com.personalfin.server.expense.dto.ExpenseCategorizationResponse;
+import com.personalfin.server.expense.exception.ExpenseNotFoundException;
 import com.personalfin.server.expense.model.Expense;
 import com.personalfin.server.expense.repository.ExpenseRepository;
 import com.personalfin.server.user.service.UserService;
@@ -95,6 +97,78 @@ public class ExpenseService {
                 .toList();
     }
 
+    public ExpenseResponse getById(UUID id) {
+        UUID userId = SecurityUtils.getCurrentUserId(userService);
+        Expense expense = expenseRepository.findById(id)
+                .orElseThrow(() -> new ExpenseNotFoundException(id));
+        
+        // Verify the expense belongs to the current user
+        if (!expense.getUserId().equals(userId)) {
+            throw new ExpenseNotFoundException(id);
+        }
+        
+        return toResponse(expense);
+    }
+
+    @Transactional
+    public ExpenseResponse update(UUID id, ExpenseUpdateRequest request) {
+        UUID userId = SecurityUtils.getCurrentUserId(userService);
+        Expense expense = expenseRepository.findById(id)
+                .orElseThrow(() -> new ExpenseNotFoundException(id));
+        
+        // Verify the expense belongs to the current user
+        if (!expense.getUserId().equals(userId)) {
+            throw new ExpenseNotFoundException(id);
+        }
+        
+        // Update fields if provided
+        if (request.description() != null && !request.description().isBlank()) {
+            expense.setDescription(request.description());
+        }
+        if (request.merchant() != null) {
+            expense.setMerchant(request.merchant());
+        }
+        if (request.amount() != null) {
+            expense.setAmount(request.amount());
+        }
+        if (request.transactionDate() != null) {
+            expense.setTransactionDate(request.transactionDate());
+        }
+        if (request.paymentMethod() != null) {
+            expense.setPaymentMethod(request.paymentMethod());
+        }
+        
+        // Handle category update - if provided, use it; otherwise re-categorize if description/merchant changed
+        if (request.category() != null && !request.category().isBlank()) {
+            expense.setCategory(request.category());
+        } else if (request.description() != null || request.merchant() != null) {
+            // Re-categorize if description or merchant changed
+            String category = resolveCategoryFromRequest(
+                    request.description() != null ? request.description() : expense.getDescription(),
+                    request.merchant() != null ? request.merchant() : expense.getMerchant(),
+                    expense.getAmount()
+            );
+            expense.setCategory(category);
+        }
+        
+        Expense updated = expenseRepository.save(expense);
+        return toResponse(updated);
+    }
+
+    @Transactional
+    public void delete(UUID id) {
+        UUID userId = SecurityUtils.getCurrentUserId(userService);
+        Expense expense = expenseRepository.findById(id)
+                .orElseThrow(() -> new ExpenseNotFoundException(id));
+        
+        // Verify the expense belongs to the current user
+        if (!expense.getUserId().equals(userId)) {
+            throw new ExpenseNotFoundException(id);
+        }
+        
+        expenseRepository.delete(expense);
+    }
+
     public List<ExpenseHeatmapPoint> heatmap(LocalDate start, LocalDate end) {
         UUID userId = SecurityUtils.getCurrentUserId(userService);
         List<ExpenseRepository.DailySpendProjection> projections = expenseRepository.findDailySums(userId, start, end);
@@ -116,6 +190,16 @@ public class ExpenseService {
                         request.description(),
                         request.merchant(),
                         request.amount()
+                ));
+        return response.category();
+    }
+
+    private String resolveCategoryFromRequest(String description, String merchant, BigDecimal amount) {
+        ExpenseCategorizationResponse response = expenseCategorizer.categorize(
+                new com.personalfin.server.expense.dto.ExpenseCategorizationRequest(
+                        description,
+                        merchant,
+                        amount
                 ));
         return response.category();
     }
