@@ -10,6 +10,7 @@ import com.personalfin.server.expense.dto.SpendingPattern;
 import com.personalfin.server.expense.service.ExpenseAnalyticsService;
 import com.personalfin.server.expense.service.ExpenseService;
 import com.personalfin.server.expense.service.ExpensePdfExportService;
+import com.personalfin.server.expense.service.ExpenseCsvExportService;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -34,13 +35,16 @@ public class ExpenseController {
     private final ExpenseService expenseService;
     private final ExpenseAnalyticsService analyticsService;
     private final ExpensePdfExportService pdfExportService;
+    private final ExpenseCsvExportService csvExportService;
 
     public ExpenseController(ExpenseService expenseService,
                              ExpenseAnalyticsService analyticsService,
-                             ExpensePdfExportService pdfExportService) {
+                             ExpensePdfExportService pdfExportService,
+                             ExpenseCsvExportService csvExportService) {
         this.expenseService = expenseService;
         this.analyticsService = analyticsService;
         this.pdfExportService = pdfExportService;
+        this.csvExportService = csvExportService;
     }
 
     @PostMapping
@@ -136,6 +140,19 @@ public class ExpenseController {
                 .header("Content-Type", "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"transactions.pdf\"")
                 .body(pdfBytes);
+    }
+
+    @GetMapping("/export/csv")
+    public ResponseEntity<byte[]> exportCsv(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
+
+        byte[] csvBytes = csvExportService.exportExpenses(start, end);
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "text/csv; charset=UTF-8")
+                .header("Content-Disposition", "attachment; filename=\"transactions.csv\"")
+                .body(csvBytes);
     }
 }
 

@@ -173,21 +173,24 @@ This document tracks the implementation status of all planned features for the P
 ---
 
 ### 8. Export CSV / Monthly PDF Summary ✅
-**Status:** Partially Complete (PDF done, CSV missing)
+**Status:** Complete
 
 **Endpoints:**
 - ✅ `GET /api/expenses/export/pdf` - Export transactions as PDF
   - Query params: `start` (optional), `end` (optional)
+- ✅ `GET /api/expenses/export/csv` - Export transactions as CSV
+  - Query params: `start` (optional), `end` (optional)
 
 **Features:**
 - ✅ PDF export with transaction history
-- ✅ Date range filtering
-- ✅ Formatted PDF with transaction details
-- ✅ Professional layout
-
-**Missing:**
-- ❌ `GET /api/expenses/export/csv` - CSV export endpoint
-- ❌ CSV format with all transaction fields
+- ✅ CSV export with transaction history
+- ✅ Date range filtering (optional start/end dates)
+- ✅ Formatted PDF with columns: Date, Description, Category, Amount, Payment Method
+- ✅ CSV format with columns: Date, Description, Merchant, Category, Amount, Payment Method
+- ✅ Total calculation in both formats
+- ✅ Multi-page PDF support for large datasets
+- ✅ UTF-8 BOM in CSV for Excel compatibility
+- ✅ Proper CSV escaping for fields containing commas/quotes
 
 ---
 
@@ -209,14 +212,10 @@ This document tracks the implementation status of all planned features for the P
 
 ### High Priority
 
-1. **CSV Export**
-   - `GET /api/expenses/export/csv` - Export as CSV
-   - Date range filtering
-   - All transaction fields included
-
-4. **Get Single Transaction**
-   - `GET /api/expenses/{id}` - Get expense details
-   - Useful for edit forms
+1. ✅ **CSV Export** - **DONE**
+   - ✅ `GET /api/expenses/export/csv` - Export as CSV
+   - ✅ Date range filtering
+   - ✅ All transaction fields included
 
 ### Medium Priority
 
@@ -259,7 +258,7 @@ This document tracks the implementation status of all planned features for the P
 
 ### Phase 2: Export & Data Management
 1. ✅ PDF export - **DONE**
-2. ❌ CSV export - **TODO**
+2. ✅ CSV export - **DONE**
 3. ❌ Enhanced filtering/search - **TODO**
 
 ### Phase 3: Enhanced Authentication
@@ -276,13 +275,12 @@ This document tracks the implementation status of all planned features for the P
 ## Quick Stats
 
 - **Total Features:** 9
-- **Fully Implemented:** 7.5 (83%)
-- **Partially Implemented:** 0.5 (6%)
+- **Fully Implemented:** 8 (89%)
+- **Partially Implemented:** 0 (0%)
 - **Not Implemented:** 1 (11%)
 
 **Breakdown:**
-- ✅ Complete: 7 features (Transactions CRUD now complete!)
-- ⚠️ Partial: 1 feature (Export - PDF done, CSV missing)
+- ✅ Complete: 8 features (Transactions CRUD + Export complete!)
 - ❌ Missing: 1 feature (Offline sync - frontend)
 
 ---
@@ -292,9 +290,10 @@ This document tracks the implementation status of all planned features for the P
 1. ✅ **Implement Edit Transaction** (`PUT /api/expenses/{id}`) - **DONE**
 2. ✅ **Implement Delete Transaction** (`DELETE /api/expenses/{id}`) - **DONE**
 3. ✅ **Implement Get Single Transaction** (`GET /api/expenses/{id}`) - **DONE**
-4. **Implement CSV Export** (`GET /api/expenses/export/csv`)
+4. ✅ **Implement CSV Export** (`GET /api/expenses/export/csv`) - **DONE**
 5. **Add Google OAuth** (if needed)
 6. **Add Backend Sync Endpoints** (if offline-first is required)
+7. **Enhanced Filtering/Search** (filter by category, amount range, search by description)
 
 ---
 

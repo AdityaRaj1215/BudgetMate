@@ -221,6 +221,23 @@ Authorization: Bearer <your-jwt-token>
   - `Content-Type: application/pdf`
   - `Content-Disposition: attachment; filename="transactions.pdf"`
 
+### Export Expenses to CSV
+- **Method**: `GET`
+- **URL**: `/api/expenses/export/csv`
+- **Auth**: Required
+- **Query Parameters**:
+  - `start`: `YYYY-MM-DD` (optional)
+  - `end`: `YYYY-MM-DD` (optional)
+- **Response** (200 OK): CSV file download
+- **Headers**:
+  - `Content-Type: text/csv; charset=UTF-8`
+  - `Content-Disposition: attachment; filename="transactions.csv"`
+- **CSV Format**:
+  - Header row: `Date,Description,Merchant,Category,Amount,Payment Method`
+  - UTF-8 BOM included for Excel compatibility
+  - Proper escaping for fields containing commas, quotes, or newlines
+  - Total row at the end
+
 ### Categorize Expense
 - **Method**: `POST`
 - **URL**: `/api/expenses/categorize`
