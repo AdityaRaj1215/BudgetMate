@@ -6,6 +6,7 @@ import com.personalfin.server.budget.service.DailySpendCoachService;
 import com.personalfin.server.expense.config.ExpenseAnalyticsProperties;
 import com.personalfin.server.expense.dto.ExpenseCreateRequest;
 import com.personalfin.server.expense.dto.ExpenseCreateResponse;
+import com.personalfin.server.expense.dto.ExpenseFilterRequest;
 import com.personalfin.server.expense.dto.ExpenseHeatmapPoint;
 import com.personalfin.server.expense.dto.ExpenseResponse;
 import com.personalfin.server.expense.dto.ExpenseUpdateRequest;
@@ -13,6 +14,7 @@ import com.personalfin.server.expense.dto.ExpenseCategorizationResponse;
 import com.personalfin.server.expense.exception.ExpenseNotFoundException;
 import com.personalfin.server.expense.model.Expense;
 import com.personalfin.server.expense.repository.ExpenseRepository;
+import com.personalfin.server.expense.repository.ExpenseSpecifications;
 import com.personalfin.server.user.service.UserService;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
@@ -91,6 +93,27 @@ public class ExpenseService {
     public List<ExpenseResponse> listAll() {
         UUID userId = SecurityUtils.getCurrentUserId(userService);
         return expenseRepository.findByUserId(userId)
+                .stream()
+                .sorted(Comparator.comparing(Expense::getTransactionDate).reversed())
+                .map(this::toResponse)
+                .toList();
+    }
+
+    public List<ExpenseResponse> listFiltered(ExpenseFilterRequest filter) {
+        UUID userId = SecurityUtils.getCurrentUserId(userService);
+        
+        var specification = ExpenseSpecifications.filterByUserAndCriteria(
+                userId,
+                filter.startDate(),
+                filter.endDate(),
+                filter.category(),
+                filter.minAmount(),
+                filter.maxAmount(),
+                filter.search(),
+                filter.paymentMethod()
+        );
+        
+        return expenseRepository.findAll(specification)
                 .stream()
                 .sorted(Comparator.comparing(Expense::getTransactionDate).reversed())
                 .map(this::toResponse)

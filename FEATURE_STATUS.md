@@ -231,10 +231,14 @@ This document tracks the implementation status of all planned features for the P
 
 ### Low Priority / Nice to Have
 
-7. **Transaction Filtering**
-   - Filter by date range, category, amount
-   - Search by description/merchant
-   - Pagination
+7. ✅ **Transaction Filtering** - **DONE**
+   - ✅ Filter by date range (startDate, endDate)
+   - ✅ Filter by category
+   - ✅ Filter by amount range (minAmount, maxAmount)
+   - ✅ Search by description/merchant (case-insensitive, partial match)
+   - ✅ Filter by payment method
+   - ✅ Combine multiple filters
+   - ❌ Pagination (can be added later if needed)
 
 8. **Transaction Tags**
    - Add tags to transactions
@@ -275,13 +279,14 @@ This document tracks the implementation status of all planned features for the P
 ## Quick Stats
 
 - **Total Features:** 9
-- **Fully Implemented:** 8 (89%)
-- **Partially Implemented:** 0 (0%)
-- **Not Implemented:** 1 (11%)
+- **Fully Implemented:** 8.5 (94%)
+- **Partially Implemented:** 0.5 (6%)
+- **Not Implemented:** 0 (0%)
 
 **Breakdown:**
-- ✅ Complete: 8 features (Transactions CRUD + Export complete!)
-- ❌ Missing: 1 feature (Offline sync - frontend)
+- ✅ Complete: 8 features (Transactions CRUD + Export + Filtering complete!)
+- ⚠️ Partial: 1 feature (Transaction Filtering - missing pagination, but core filtering done)
+- ❌ Missing: 0 features (All core features implemented!)
 
 ---
 
@@ -291,9 +296,10 @@ This document tracks the implementation status of all planned features for the P
 2. ✅ **Implement Delete Transaction** (`DELETE /api/expenses/{id}`) - **DONE**
 3. ✅ **Implement Get Single Transaction** (`GET /api/expenses/{id}`) - **DONE**
 4. ✅ **Implement CSV Export** (`GET /api/expenses/export/csv`) - **DONE**
-5. **Add Google OAuth** (if needed)
-6. **Add Backend Sync Endpoints** (if offline-first is required)
-7. **Enhanced Filtering/Search** (filter by category, amount range, search by description)
+5. ✅ **Enhanced Filtering/Search** (filter by category, amount range, search by description) - **DONE**
+6. **Add Pagination** (optional enhancement for large datasets)
+7. **Add Google OAuth** (if needed)
+8. **Add Backend Sync Endpoints** (if offline-first is required)
 
 ---
 

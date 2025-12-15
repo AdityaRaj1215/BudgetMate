@@ -1,48 +1,120 @@
-# Email Configuration Guide
+# Email Configuration for OTP
 
-This guide explains how to configure email sending for OTP verification during user registration.
+This guide explains how to configure email for OTP delivery in the Personal Finance Tracker application.
 
-## Overview
+## Quick Answer
 
-The application sends OTP codes via email to verify user email addresses during registration. The email service is configured through Spring Mail and supports multiple email providers.
+**In Development Mode (Default):**
+- If email is **NOT configured**, the OTP will be:
+  - ✅ **Returned in the API response** (check `devOtp` field)
+  - ✅ **Logged in the server console** (check application logs)
+- You can test registration without email setup!
 
-## Configuration
+**In Production Mode:**
+- Email **MUST** be configured to send OTPs
+- OTPs will be sent via email only (not returned in response)
 
-### Environment Variables
+---
 
-Add the following environment variables to your `.env` file or environment:
+## Option 1: Development Mode (No Email Setup Required)
+
+If you're just testing, you don't need to configure email. The OTP will be available in:
+
+1. **API Response**: When you call `POST /api/auth/register/otp`, check the response:
+   ```json
+   {
+     "message": "OTP generated successfully (Email disabled - Dev mode)",
+     "expiresInSeconds": 600,
+     "devOtp": "123456"  // <-- Your OTP is here!
+   }
+   ```
+
+2. **Server Logs**: Check your console/terminal for:
+   ```
+   DEV MODE: Email disabled - OTP for user@example.com is 123456
+   ```
+
+---
+
+## Option 2: Configure Email (Gmail Example)
+
+To actually receive OTP emails, follow these steps:
+
+### Step 1: Enable 2-Factor Authentication on Gmail
+1. Go to your Google Account settings
+2. Navigate to Security
+3. Enable 2-Step Verification
+
+### Step 2: Generate App Password
+1. Go to Google Account → Security
+2. Under "2-Step Verification", click "App passwords"
+3. Select "Mail" and "Other (Custom name)"
+4. Enter "Personal Finance Tracker" as the name
+5. Click "Generate"
+6. **Copy the 16-character password** (you'll need this)
+
+### Step 3: Set Environment Variables
+
+Create a `.env` file in the server root directory (or set environment variables):
 
 ```bash
-# Email Configuration
+# Enable email
 EMAIL_ENABLED=true
+
+# Gmail SMTP settings
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USERNAME=your-email@gmail.com
-EMAIL_PASSWORD=your-app-password
-EMAIL_FROM=no-reply@personalfinance.com
-```
-
-### Gmail Setup (Recommended for Development)
-
-1. **Enable 2-Factor Authentication** on your Gmail account
-2. **Generate App Password:**
-   - Go to Google Account settings
-   - Security → 2-Step Verification → App passwords
-   - Generate a new app password for "Mail"
-   - Use this password in `EMAIL_PASSWORD`
-
-3. **Configuration:**
-```bash
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USERNAME=your-email@gmail.com
-EMAIL_PASSWORD=your-16-char-app-password
+EMAIL_PASSWORD=your-16-char-app-password  # The app password from Step 2
 EMAIL_FROM=your-email@gmail.com
 ```
 
-### Other Email Providers
+### Step 4: Restart the Application
 
-#### Outlook/Hotmail
+After setting the environment variables, restart your Spring Boot application.
+
+---
+
+## Testing Email Configuration
+
+1. **Request OTP**:
+   ```bash
+   POST /api/auth/register/otp
+   {
+     "email": "your-email@gmail.com"
+   }
+   ```
+
+2. **Check Response**:
+   - If email is configured: `"message": "OTP sent successfully to your email"` (no `devOtp` field)
+   - If email is NOT configured: `"devOtp": "123456"` will be in the response
+
+3. **Check Your Email Inbox**:
+   - Subject: "Your Registration OTP - Personal Finance Tracker"
+   - Contains the 6-digit OTP code
+
+---
+
+## Troubleshooting
+
+### Email Not Sending?
+
+1. **Check Logs**: Look for error messages in the console
+2. **Verify App Password**: Make sure you're using the 16-character app password, not your regular Gmail password
+3. **Check Firewall**: Ensure port 587 is not blocked
+4. **Verify Credentials**: Double-check `EMAIL_USERNAME` and `EMAIL_PASSWORD`
+
+### Common Errors
+
+- **"Authentication failed"**: Wrong app password or username
+- **"Connection timeout"**: Firewall blocking port 587
+- **"Invalid credentials"**: Not using app password (must use app password, not regular password)
+
+---
+
+## Other Email Providers
+
+### Outlook/Hotmail
 ```bash
 EMAIL_HOST=smtp-mail.outlook.com
 EMAIL_PORT=587
@@ -50,136 +122,35 @@ EMAIL_USERNAME=your-email@outlook.com
 EMAIL_PASSWORD=your-password
 ```
 
-#### SendGrid
+### Yahoo
 ```bash
-EMAIL_HOST=smtp.sendgrid.net
+EMAIL_HOST=smtp.mail.yahoo.com
 EMAIL_PORT=587
-EMAIL_USERNAME=apikey
-EMAIL_PASSWORD=your-sendgrid-api-key
-EMAIL_FROM=your-verified-sender@domain.com
+EMAIL_USERNAME=your-email@yahoo.com
+EMAIL_PASSWORD=your-app-password
 ```
 
-#### AWS SES
+### Custom SMTP Server
 ```bash
-EMAIL_HOST=email-smtp.us-east-1.amazonaws.com
-EMAIL_PORT=587
-EMAIL_USERNAME=your-aws-access-key
-EMAIL_PASSWORD=your-aws-secret-key
-EMAIL_FROM=your-verified-email@domain.com
+EMAIL_HOST=your-smtp-server.com
+EMAIL_PORT=587  # or 465 for SSL
+EMAIL_USERNAME=your-username
+EMAIL_PASSWORD=your-password
 ```
 
-#### Mailtrap (Testing)
-```bash
-EMAIL_HOST=smtp.mailtrap.io
-EMAIL_PORT=2525
-EMAIL_USERNAME=your-mailtrap-username
-EMAIL_PASSWORD=your-mailtrap-password
-EMAIL_FROM=test@personalfinance.com
-```
+---
 
-## Development Mode
+## Security Notes
 
-In development mode (`spring.profiles.active=dev`), if email is disabled or fails to send, the OTP will be logged to the console for testing purposes:
+- ⚠️ **Never commit `.env` file to version control**
+- ⚠️ **Use app passwords, not your main account password**
+- ⚠️ **In production, use environment variables or a secrets manager**
+- ✅ **App passwords can be revoked if compromised**
 
-```
-WARN: DEV MODE: OTP for user@example.com is 123456
-```
+---
 
-To disable email sending in development (for testing):
-```bash
-EMAIL_ENABLED=false
-```
+## Summary
 
-## Production Setup
-
-For production, ensure:
-
-1. **Use a reliable email service** (SendGrid, AWS SES, etc.)
-2. **Set proper SPF/DKIM records** for your domain
-3. **Use environment variables** for all email credentials
-4. **Monitor email delivery** and handle failures gracefully
-5. **Set up email bounce handling** if needed
-
-## Testing
-
-### Test Email Sending
-
-1. Start the application with email configuration
-2. Request an OTP:
-```bash
-POST /api/auth/register/otp
-{
-  "email": "test@example.com"
-}
-```
-
-3. Check the email inbox for the OTP code
-4. Use the OTP to register:
-```bash
-POST /api/auth/register
-{
-  "username": "testuser",
-  "email": "test@example.com",
-  "password": "SecurePass123!",
-  "otp": "123456"
-}
-```
-
-### Email Template
-
-The OTP email includes:
-- Subject: "Your Registration OTP - Personal Finance Tracker"
-- Body: OTP code and expiration time (10 minutes)
-- Professional formatting
-
-## Troubleshooting
-
-### Email Not Sending
-
-1. **Check logs** for error messages
-2. **Verify credentials** are correct
-3. **Check firewall/network** allows SMTP connections
-4. **Verify email provider** allows SMTP access
-5. **Check spam folder** if emails are sent but not received
-
-### Common Errors
-
-**"Authentication failed"**
-- Wrong username/password
-- App password not used (for Gmail)
-- 2FA not enabled (for Gmail)
-
-**"Connection timeout"**
-- Wrong SMTP host/port
-- Firewall blocking SMTP
-- Network connectivity issues
-
-**"Email disabled"**
-- Set `EMAIL_ENABLED=true`
-- Check application logs
-
-## Security Considerations
-
-1. **Never commit email credentials** to version control
-2. **Use app passwords** instead of main passwords (Gmail)
-3. **Rotate credentials** regularly
-4. **Use environment variables** for all sensitive data
-5. **Monitor email sending** for abuse
-6. **Rate limit** OTP requests to prevent spam
-
-## Email Service Implementation
-
-The email service (`EmailService`) handles:
-- Sending OTP emails
-- Error handling and logging
-- Development mode fallback
-- Email template generation
-
-## Next Steps
-
-- [ ] Configure email provider credentials
-- [ ] Test email sending
-- [ ] Set up email monitoring
-- [ ] Configure SPF/DKIM records (production)
-- [ ] Set up email bounce handling (production)
-
+- **For Development/Testing**: No email setup needed - OTP is in API response and logs
+- **For Production**: Configure email with app password for Gmail (or other SMTP server)
+- **Check OTP**: Either in email inbox OR in API response `devOtp` field (dev mode only)

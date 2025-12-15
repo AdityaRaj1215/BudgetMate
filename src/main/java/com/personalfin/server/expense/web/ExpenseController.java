@@ -3,6 +3,7 @@ package com.personalfin.server.expense.web;
 import com.personalfin.server.expense.dto.CategorySpendingSummary;
 import com.personalfin.server.expense.dto.ExpenseCreateRequest;
 import com.personalfin.server.expense.dto.ExpenseCreateResponse;
+import com.personalfin.server.expense.dto.ExpenseFilterRequest;
 import com.personalfin.server.expense.dto.ExpenseHeatmapPoint;
 import com.personalfin.server.expense.dto.ExpenseResponse;
 import com.personalfin.server.expense.dto.ExpenseUpdateRequest;
@@ -59,7 +60,24 @@ public class ExpenseController {
     }
 
     @GetMapping
-    public List<ExpenseResponse> list() {
+    public List<ExpenseResponse> list(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) java.math.BigDecimal minAmount,
+            @RequestParam(required = false) java.math.BigDecimal maxAmount,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String paymentMethod) {
+        
+        // If any filter is provided, use filtered search; otherwise return all
+        if (startDate != null || endDate != null || category != null || 
+            minAmount != null || maxAmount != null || search != null || paymentMethod != null) {
+            
+            ExpenseFilterRequest filter = new ExpenseFilterRequest(
+                    startDate, endDate, category, minAmount, maxAmount, search, paymentMethod);
+            return expenseService.listFiltered(filter);
+        }
+        
         return expenseService.listAll();
     }
 

@@ -115,11 +115,24 @@ Authorization: Bearer <your-jwt-token>
 }
 ```
 
-### List All Expenses
+### List All Expenses (with Filtering)
 - **Method**: `GET`
 - **URL**: `/api/expenses`
 - **Auth**: Required
-- **Response** (200 OK): Array of ExpenseResponse objects
+- **Query Parameters** (all optional):
+  - `startDate`: `YYYY-MM-DD` - Filter expenses from this date onwards
+  - `endDate`: `YYYY-MM-DD` - Filter expenses up to this date
+  - `category`: `string` - Filter by category (case-insensitive)
+  - `minAmount`: `number` - Minimum amount filter
+  - `maxAmount`: `number` - Maximum amount filter
+  - `search`: `string` - Search in description and merchant fields (case-insensitive, partial match)
+  - `paymentMethod`: `string` - Filter by payment method (case-insensitive)
+- **Response** (200 OK): Array of ExpenseResponse objects, sorted by transaction date (newest first)
+- **Note**: If no filter parameters are provided, all expenses for the authenticated user are returned.
+- **Example**:
+  - `/api/expenses` - Returns all expenses
+  - `/api/expenses?category=Food&minAmount=10` - Returns Food expenses with amount >= 10
+  - `/api/expenses?search=coffee&startDate=2024-01-01` - Returns expenses containing "coffee" from 2024-01-01 onwards
 
 ### Get Expense Heatmap
 - **Method**: `GET`
