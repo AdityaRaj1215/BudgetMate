@@ -28,6 +28,11 @@ public interface BudgetRepository extends JpaRepository<Budget, UUID> {
 
     @Query("SELECT b FROM Budget b WHERE b.monthYear BETWEEN :start AND :end AND b.active = true")
     List<Budget> findActiveBetween(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query("SELECT b FROM Budget b WHERE b.userId = :userId AND b.updatedAt > :since ORDER BY b.updatedAt ASC")
+    List<Budget> findUpdatedSince(@Param("userId") UUID userId, @Param("since") java.time.OffsetDateTime since);
+
+    List<Budget> findByUserId(UUID userId);
 }
 
 

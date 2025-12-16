@@ -52,6 +52,9 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpec
     @Query("SELECT SUM(e.amount) FROM Expense e WHERE e.userId = :userId AND e.transactionDate = :date")
     java.math.BigDecimal findTotalSpentOnDate(@Param("userId") UUID userId, @Param("date") LocalDate date);
 
+    @Query("SELECT e FROM Expense e WHERE e.userId = :userId AND e.updatedAt > :since ORDER BY e.updatedAt ASC")
+    List<Expense> findUpdatedSince(@Param("userId") UUID userId, @Param("since") java.time.OffsetDateTime since);
+
     interface DailySpendProjection {
         LocalDate getDate();
         java.math.BigDecimal getTotal();

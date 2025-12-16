@@ -24,3 +24,4 @@ public record ExpenseFilterRequest(
     // All fields are optional - if null, that filter is not applied
 }
 
+
