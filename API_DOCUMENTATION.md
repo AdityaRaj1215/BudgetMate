@@ -1093,6 +1093,239 @@ This API provides comprehensive personal finance management capabilities includi
 - **Bill Reminders**: Track recurring bills and payments
 - **Receipt Scanning**: OCR-based receipt scanning and expense creation
 - **User Preferences**: Manage user settings and preferences
+- **Offline Sync**: Push/pull synchronization for offline-first support
+
+All endpoints are secured with JWT authentication and automatically filter data by the authenticated user.
+
+---
+
+## Offline Sync Endpoints
+
+### Push Local Changes
+- **Method**: `POST`
+- **URL**: `/api/sync/push`
+- **Auth**: Required
+- **Description**: Push local changes (create, update, delete) to the server. Handles conflict detection and resolution.
+- **Request Body**:
+```json
+{
+  "lastSyncAt": "2025-01-15T10:30:00Z",
+  "deviceId": "mobile-device-123",
+  "expenses": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "operation": "create",
+      "clientUpdatedAt": "2025-01-15T11:00:00Z",
+      "data": {
+        "description": "Lunch",
+        "merchant": "Restaurant",
+        "amount": 25.50,
+        "transactionDate": "2025-01-15",
+        "paymentMethod": "Credit Card",
+        "category": "Food"
+      }
+    },
+    {
+      "id": "660e8400-e29b-41d4-a716-446655440001",
+      "operation": "update",
+      "clientUpdatedAt": "2025-01-15T11:05:00Z",
+      "data": {
+        "description": "Updated description",
+        "amount": 30.00
+      }
+    },
+    {
+      "id": "770e8400-e29b-41d4-a716-446655440002",
+      "operation": "delete",
+      "clientUpdatedAt": "2025-01-15T11:10:00Z",
+      "data": null
+    }
+  ],
+  "budgets": [],
+  "bills": []
+}
+```
+- **Response** (200 OK):
+```json
+{
+  "serverSyncAt": "2025-01-15T12:00:00Z",
+  "processedCount": 2,
+  "conflictCount": 1,
+  "conflicts": [
+    {
+      "entityType": "expense",
+      "entityId": "660e8400-e29b-41d4-a716-446655440001",
+      "reason": "server_updated_after_client",
+      "serverUpdatedAt": "2025-01-15T11:30:00Z",
+      "clientUpdatedAt": "2025-01-15T11:05:00Z"
+    }
+  ],
+  "results": [
+    {
+      "entityType": "expense",
+      "entityId": "550e8400-e29b-41d4-a716-446655440000",
+      "operation": "create",
+      "success": true,
+      "message": "Created successfully",
+      "serverId": "550e8400-e29b-41d4-a716-446655440000"
+    },
+    {
+      "entityType": "expense",
+      "entityId": "660e8400-e29b-41d4-a716-446655440001",
+      "operation": "update",
+      "success": false,
+      "message": "Conflict: Server has newer version",
+      "serverId": null
+    },
+    {
+      "entityType": "expense",
+      "entityId": "770e8400-e29b-41d4-a716-446655440002",
+      "operation": "delete",
+      "success": true,
+      "message": "Deleted successfully",
+      "serverId": null
+    }
+  ]
+}
+```
+
+**Operation Types:**
+- `create`: Create a new entity
+- `update`: Update an existing entity
+- `delete`: Delete an entity
+
+**Conflict Reasons:**
+- `server_updated_after_client`: Server has a newer version than the client's last sync
+- `entity_deleted_on_server`: Entity was deleted on server but client is trying to update/delete it
+
+---
+
+### Pull Server Changes
+- **Method**: `GET`
+- **URL**: `/api/sync/pull`
+- **Auth**: Required
+- **Description**: Pull all changes from the server since the last sync timestamp.
+- **Query Parameters**:
+  - `lastSyncAt` (optional): ISO 8601 timestamp of last sync. If not provided, uses stored metadata.
+  - `deviceId` (optional): Device identifier for multi-device sync tracking.
+- **Example**: `/api/sync/pull?lastSyncAt=2025-01-15T10:30:00Z&deviceId=mobile-device-123`
+- **Response** (200 OK):
+```json
+{
+  "serverSyncAt": "2025-01-15T12:00:00Z",
+  "lastSyncAt": "2025-01-15T10:30:00Z",
+  "totalChanges": 5,
+  "expenses": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "description": "Coffee",
+      "merchant": "Starbucks",
+      "category": "Food",
+      "amount": 5.50,
+      "transactionDate": "2025-01-15",
+      "paymentMethod": "Credit Card",
+      "createdAt": "2025-01-15T11:00:00Z",
+      "updatedAt": "2025-01-15T11:00:00Z"
+    }
+  ],
+  "budgets": [
+    {
+      "id": "660e8400-e29b-41d4-a716-446655440001",
+      "name": "January 2025",
+      "amount": 5000.00,
+      "monthYear": "2025-01-01",
+      "active": true,
+      "createdAt": "2025-01-01T00:00:00Z",
+      "updatedAt": "2025-01-15T11:30:00Z"
+    }
+  ],
+  "bills": [],
+  "deletedExpenses": [],
+  "deletedBudgets": [],
+  "deletedBills": []
+}
+```
+
+---
+
+### Get Sync Status
+- **Method**: `GET`
+- **URL**: `/api/sync/status`
+- **Auth**: Required
+- **Description**: Get the current sync status including last sync timestamp and pending changes count.
+- **Response** (200 OK):
+```json
+{
+  "lastSyncAt": "2025-01-15T10:30:00Z",
+  "hasUnsyncedChanges": true,
+  "pendingChangesCount": 0
+}
+```
+
+---
+
+## Sync Workflow
+
+### Typical Offline-First Sync Flow
+
+1. **Initial Sync (Pull)**:
+   ```
+   GET /api/sync/pull
+   → Returns all existing data
+   → Store in local IndexedDB
+   → Save serverSyncAt as lastSyncAt
+   ```
+
+2. **Make Changes Offline**:
+   - User creates/updates/deletes expenses, budgets, bills
+   - Store changes in local IndexedDB with operation type
+   - Mark as "pending sync"
+
+3. **When Online (Push)**:
+   ```
+   POST /api/sync/push
+   {
+     "lastSyncAt": "<stored timestamp>",
+     "expenses": [<pending changes>],
+     "budgets": [<pending changes>],
+     "bills": [<pending changes>]
+   }
+   → Server processes changes
+   → Returns conflicts if any
+   → Update local data with server responses
+   ```
+
+4. **After Push (Pull)**:
+   ```
+   GET /api/sync/pull?lastSyncAt=<new serverSyncAt>
+   → Get any server-side changes
+   → Merge with local data
+   → Update lastSyncAt
+   ```
+
+### Conflict Resolution Strategy
+
+The sync system uses **Last-Write-Wins** with conflict detection:
+
+- **No Conflict**: Client's change is applied if server hasn't updated the entity since client's last sync
+- **Conflict Detected**: 
+  - Server version is newer → Conflict reported, client change rejected
+  - Entity deleted on server → Conflict reported, client change rejected
+  - Client can resolve conflicts by:
+    1. Accepting server version (discard local change)
+    2. Forcing client version (requires manual resolution endpoint - future enhancement)
+    3. Merging changes (requires manual merge - future enhancement)
+
+### Best Practices
+
+1. **Always pull before push** to minimize conflicts
+2. **Handle conflicts gracefully** - show user both versions and let them choose
+3. **Use deviceId** for multi-device scenarios to track per-device sync state
+4. **Store lastSyncAt** locally and send it with every push request
+5. **Batch operations** - send multiple changes in a single push request
+6. **Handle network failures** - retry failed syncs with exponential backoff
+
+---
 
 All endpoints are secured with JWT authentication and automatically filter data by the authenticated user.
 

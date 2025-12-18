@@ -12,3 +12,5 @@ CREATE TABLE sync_metadata (
 CREATE INDEX idx_sync_metadata_user_id ON sync_metadata (user_id);
 CREATE INDEX idx_sync_metadata_last_sync ON sync_metadata (last_sync_at);
 
+
+
