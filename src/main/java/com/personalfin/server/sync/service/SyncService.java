@@ -329,9 +329,9 @@ public class SyncService {
                 new com.personalfin.server.expense.dto.ExpenseUpdateRequest(
                         data.description(),
                         data.merchant(),
-                        data.category(),
                         data.amount(),
                         data.transactionDate(),
+                        data.category(),
                         data.paymentMethod()
                 );
         ExpenseResponse updated = expenseService.update(id, updateRequest);
