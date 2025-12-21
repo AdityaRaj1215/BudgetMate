@@ -4,6 +4,7 @@ import com.personalfin.server.auth.filter.JwtAuthenticationFilter;
 import com.personalfin.server.config.filter.RateLimitingFilter;
 import com.personalfin.server.config.SecurityHeadersConfig;
 import com.personalfin.server.security.filter.InputSanitizationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,6 +32,9 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:3000,http://localhost:8080}")
+    private String allowedOrigins;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserDetailsService userDetailsService;
@@ -68,6 +72,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/email/diagnostic/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
@@ -97,15 +102,27 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:3000",
-                "http://localhost:3001",
-                "http://localhost:8080",
-                "http://127.0.0.1:5173",
-                "http://127.0.0.1:3000",
-                "http://127.0.0.1:3001"
-        ));
+        
+        // Parse allowed origins from configuration (comma-separated)
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        
+        // Add common localhost variants for development
+        List<String> allOrigins = origins.stream()
+                .flatMap(origin -> {
+                    // If origin contains localhost, also add 127.0.0.1 variant
+                    if (origin.contains("localhost")) {
+                        String variant = origin.replace("localhost", "127.0.0.1");
+                        return Arrays.asList(origin, variant).stream();
+                    }
+                    return Arrays.asList(origin).stream();
+                })
+                .distinct()
+                .toList();
+        
+        configuration.setAllowedOrigins(allOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization", "Content-Type", "X-CSRF-TOKEN"));

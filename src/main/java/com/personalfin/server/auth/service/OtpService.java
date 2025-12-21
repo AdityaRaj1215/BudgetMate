@@ -37,7 +37,7 @@ public class OtpService {
     @Transactional
     public OtpResponse generateOtp(String email) {
         // Throttle OTP requests per email
-        Optional<OtpCode> latest = otpCodeRepository.findLatestByEmail(email);
+        Optional<OtpCode> latest = otpCodeRepository.findFirstByEmailOrderByCreatedAtDesc(email.toLowerCase());
         if (latest.isPresent()) {
             OffsetDateTime lastCreated = latest.get().getCreatedAt();
             if (lastCreated.isAfter(OffsetDateTime.now().minusSeconds(MIN_SECONDS_BETWEEN_REQUESTS))) {

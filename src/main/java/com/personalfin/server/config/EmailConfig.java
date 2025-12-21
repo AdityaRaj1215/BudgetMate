@@ -1,5 +1,7 @@
 package com.personalfin.server.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +12,8 @@ import java.util.Properties;
 
 @Configuration
 public class EmailConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(EmailConfig.class);
 
     @Value("${spring.mail.host:smtp.gmail.com}")
     private String host;
@@ -33,6 +37,21 @@ public class EmailConfig {
         mailSender.setPort(port);
         mailSender.setUsername(username);
         mailSender.setPassword(password);
+
+        // Log configuration status (without exposing password)
+        boolean credentialsSet = username != null && !username.isEmpty() 
+                && password != null && !password.isEmpty();
+        
+        if (emailEnabled && !credentialsSet) {
+            logger.warn("⚠️ Email is enabled but credentials are not set!");
+            logger.warn("⚠️ Set EMAIL_USERNAME and EMAIL_PASSWORD environment variables");
+            logger.warn("⚠️ Or edit application-dev.yml directly");
+        } else if (emailEnabled && credentialsSet) {
+            logger.info("✅ Email configuration loaded: host={}, port={}, username={}", 
+                    host, port, username);
+        } else {
+            logger.info("ℹ️ Email is disabled (EMAIL_ENABLED=false)");
+        }
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");

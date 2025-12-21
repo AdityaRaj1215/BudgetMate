@@ -7,10 +7,13 @@ import java.util.regex.Pattern;
 @Component
 public class PasswordValidator {
 
-    // Password must be at least 8 characters, contain at least one uppercase, one lowercase, one digit, and one special character
-    private static final Pattern PASSWORD_PATTERN = Pattern.compile(
-            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
-    );
+    // Password must be at least 8 characters, contain at least one lowercase, one digit, and one special character
+    // Allowed special characters: @$!%*?&#^_+-=()[]{}|\\:;"'<>,./~`
+    // Using a simpler approach: check for at least one non-alphanumeric character
+    private static final Pattern HAS_LOWERCASE = Pattern.compile(".*[a-z].*");
+    private static final Pattern HAS_DIGIT = Pattern.compile(".*\\d.*");
+    private static final Pattern HAS_SPECIAL_CHAR = Pattern.compile(".*[^A-Za-z0-9].*");
+    private static final Pattern VALID_CHARS = Pattern.compile("^[A-Za-z0-9@$!%*?&#^_+\\-=()\\[\\]{}|\\\\:;\"'<>,./~`]+$");
 
     private static final int MIN_LENGTH = 8;
     private static final int MAX_LENGTH = 128;
@@ -32,9 +35,29 @@ public class PasswordValidator {
             );
         }
 
-        if (!PASSWORD_PATTERN.matcher(password).matches()) {
+        // Check individual requirements
+        if (!HAS_LOWERCASE.matcher(password).matches()) {
             return PasswordValidationResult.invalid(
-                    "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character (@$!%*?&)"
+                    "Password must contain at least one lowercase letter"
+            );
+        }
+
+        if (!HAS_DIGIT.matcher(password).matches()) {
+            return PasswordValidationResult.invalid(
+                    "Password must contain at least one digit"
+            );
+        }
+
+        if (!HAS_SPECIAL_CHAR.matcher(password).matches()) {
+            return PasswordValidationResult.invalid(
+                    "Password must contain at least one special character (e.g., @$!%*?&#^_+-=()[]{}|\\:;\"'<>,./~`)"
+            );
+        }
+
+        // Check for invalid characters (only allow alphanumeric and common special characters)
+        if (!VALID_CHARS.matcher(password).matches()) {
+            return PasswordValidationResult.invalid(
+                    "Password contains invalid characters. Only letters, numbers, and common special characters are allowed"
             );
         }
 

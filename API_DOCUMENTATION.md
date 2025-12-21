@@ -15,18 +15,90 @@ Authorization: Bearer <your-jwt-token>
 
 ### Authentication Endpoints
 
+#### Validate Password
+- **Method**: `POST`
+- **URL**: `/api/auth/register/validate-password`
+- **Auth**: Not required
+- **Description**: Validate password strength in real-time. Can be called as user types password in the frontend.
+- **Request Body**:
+```json
+{
+  "password": "string (required)"
+}
+```
+- **Response** (200 OK - Valid Password):
+```json
+{
+  "valid": true,
+  "message": "Password is valid"
+}
+```
+- **Response** (200 OK - Invalid Password):
+```json
+{
+  "isValid": false,
+  "message": "Password must contain at least one lowercase letter, one digit, and one special character"
+}
+```
+- **Password Requirements**:
+  - Minimum 8 characters
+  - At least one lowercase letter (a-z)
+  - At least one digit (0-9)
+  - At least one special character (e.g., @$!%*?&#^_+-=()[]{}|\\:;"'<>,./~`)
+  - Maximum 128 characters
+  - Cannot be a common password
+
+#### Request OTP for Registration
+- **Method**: `POST`
+- **URL**: `/api/auth/register/otp`
+- **Auth**: Not required
+- **Description**: Request an OTP code for email verification.
+- **Request Body**:
+```json
+{
+  "email": "string (required, valid email)"
+}
+```
+- **Response** (200 OK):
+```json
+{
+  "message": "OTP sent successfully to your email",
+  "expiresInSeconds": 600
+}
+```
+- **Response (Dev Mode - Email Disabled)**:
+```json
+{
+  "message": "OTP generated successfully (Email disabled - Dev mode)",
+  "expiresInSeconds": 600,
+  "devOtp": "123456"
+}
+```
+- **Error Responses**:
+  - `400 Bad Request`: Email already exists
+  - `429 Too Many Requests`: Too many OTP requests (rate limited)
+
 #### Register User
 - **Method**: `POST`
 - **URL**: `/api/auth/register`
 - **Auth**: Not required
+- **Description**: Complete user registration with OTP verification. Must request OTP first. Password validation happens at this step.
 - **Request Body**:
 ```json
 {
-  "username": "string (required)",
-  "email": "string (required)",
-  "password": "string (required)"
+  "username": "string (required, 3-50 characters)",
+  "email": "string (required, valid email)",
+  "password": "string (required, min 8 characters, must contain lowercase letter, digit, and special character)",
+  "otp": "string (required, 6-digit code from email)"
 }
 ```
+- **Password Requirements**:
+  - Minimum 8 characters
+  - At least one lowercase letter (a-z)
+  - At least one digit (0-9)
+  - At least one special character (e.g., @$!%*?&#^_+-=()[]{}|\\:;"'<>,./~`)
+  - Maximum 128 characters
+  - Cannot be a common password
 - **Response** (201 Created):
 ```json
 {
@@ -36,6 +108,9 @@ Authorization: Bearer <your-jwt-token>
   "roles": ["string"]
 }
 ```
+- **Error Responses**:
+  - `400 Bad Request`: Invalid OTP, expired OTP, password validation failed
+  - `409 Conflict`: Username or email already exists
 
 #### Login
 - **Method**: `POST`

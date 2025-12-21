@@ -20,11 +20,11 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
   mail:
-    enabled: ${EMAIL_ENABLED:true}
-    host: ${EMAIL_HOST:smtp.gmail.com}
-    port: ${EMAIL_PORT:587}
-    username: ${EMAIL_USERNAME:}
-    password: ${EMAIL_PASSWORD:}
+    enabled: true
+    host: smtp.gmail.com
+    port: 587
+    username: adityarajchaudhary12@gmail.com
+    password: hqkcywwierudbcuk
     properties:
       mail:
         smtp:
@@ -35,7 +35,7 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
-    from: ${EMAIL_FROM:no-reply@personalfinance.com}
+    from: adityarajchaudhary12@gmail.com
 
 server:
   port: ${SERVER_PORT:8080}
@@ -104,4 +104,3 @@ security:
     max-attempts: ${SECURITY_MAX_ATTEMPTS:5}
     lockout-duration-minutes: ${SECURITY_LOCKOUT_DURATION:30}
     window-minutes: ${SECURITY_WINDOW_MINUTES:15}
-

@@ -4,6 +4,8 @@ import com.personalfin.server.auth.dto.LoginRequest;
 import com.personalfin.server.auth.dto.LoginResponse;
 import com.personalfin.server.auth.dto.OtpRequest;
 import com.personalfin.server.auth.dto.OtpResponse;
+import com.personalfin.server.auth.dto.PasswordValidationRequest;
+import com.personalfin.server.auth.dto.PasswordValidationResponse;
 import com.personalfin.server.auth.dto.RegisterRequest;
 import com.personalfin.server.auth.service.JwtTokenService;
 import com.personalfin.server.auth.service.OtpService;
@@ -11,6 +13,7 @@ import com.personalfin.server.security.exception.AccountLockedException;
 import com.personalfin.server.security.service.AccountLockoutService;
 import com.personalfin.server.security.service.AuditLogService;
 import com.personalfin.server.security.util.SecurityUtils;
+import com.personalfin.server.security.validation.PasswordValidator;
 import com.personalfin.server.user.model.User;
 import com.personalfin.server.user.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,6 +46,7 @@ public class AuthController {
     private final AccountLockoutService accountLockoutService;
     private final AuditLogService auditLogService;
     private final OtpService otpService;
+    private final PasswordValidator passwordValidator;
 
     public AuthController(
             AuthenticationManager authenticationManager,
@@ -51,7 +55,8 @@ public class AuthController {
             UserService userService,
             AccountLockoutService accountLockoutService,
             AuditLogService auditLogService,
-            OtpService otpService) {
+            OtpService otpService,
+            PasswordValidator passwordValidator) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenService = jwtTokenService;
         this.userDetailsService = userDetailsService;
@@ -59,6 +64,7 @@ public class AuthController {
         this.accountLockoutService = accountLockoutService;
         this.auditLogService = auditLogService;
         this.otpService = otpService;
+        this.passwordValidator = passwordValidator;
     }
 
     private HttpServletRequest getHttpServletRequest() {
@@ -100,15 +106,36 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/register/validate-password")
+    public ResponseEntity<PasswordValidationResponse> validatePassword(
+            @Valid @RequestBody PasswordValidationRequest request) {
+        PasswordValidator.PasswordValidationResult result = passwordValidator.validate(request.password());
+        
+        if (result.isValid()) {
+            return ResponseEntity.ok(PasswordValidationResponse.valid());
+        } else {
+            return ResponseEntity.ok(PasswordValidationResponse.invalid(result.getErrorMessage()));
+        }
+    }
+
     @PostMapping("/register/otp")
     public ResponseEntity<OtpResponse> requestOtp(@Valid @RequestBody OtpRequest request) {
         HttpServletRequest httpRequest = getHttpServletRequest();
         String ipAddress = httpRequest != null ? SecurityUtils.getClientIpAddress(httpRequest) : "unknown";
 
         try {
+            // Check if email already exists
+            if (userService.existsByEmail(request.email())) {
+                auditLogService.logRegistration(request.email(), ipAddress, false, "Email already exists");
+                throw new IllegalArgumentException("Email already registered");
+            }
+
             OtpResponse response = otpService.generateOtp(request.email());
             auditLogService.logRegistration(request.email(), ipAddress, true, "OTP generated");
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            // Re-throw validation errors
+            throw e;
         } catch (Exception e) {
             auditLogService.logRegistration(request.email(), ipAddress, false, e.getMessage());
             throw e;

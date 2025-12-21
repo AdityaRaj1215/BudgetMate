@@ -21,11 +21,6 @@ public interface OtpCodeRepository extends JpaRepository<OtpCode, UUID> {
             """)
     Optional<OtpCode> findActiveByEmail(@Param("email") String email, @Param("now") OffsetDateTime now);
 
-    @Query("""
-            SELECT o FROM OtpCode o
-            WHERE o.email = :email
-            ORDER BY o.createdAt DESC
-            """)
-    Optional<OtpCode> findLatestByEmail(@Param("email") String email);
+    Optional<OtpCode> findFirstByEmailOrderByCreatedAtDesc(String email);
 }
 
