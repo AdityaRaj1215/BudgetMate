@@ -85,7 +85,7 @@
      method: 'POST',
      headers: { 'Content-Type': 'application/json' },
      body: JSON.stringify({ email: 'test@example.com', password: 'test' })
-   })
+   }) gppg\\
    ```
 
 2. **Check browser console** - should NOT see CORS errors
