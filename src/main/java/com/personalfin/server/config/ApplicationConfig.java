@@ -9,6 +9,9 @@ public class ApplicationConfig {
 //comment
     @Bean
     public Clock systemClock() {
+
+
+        System.out.println("Hi");
         return Clock.systemDefaultZone();
     }
 }
