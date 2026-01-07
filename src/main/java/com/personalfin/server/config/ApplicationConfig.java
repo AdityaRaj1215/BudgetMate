@@ -10,8 +10,6 @@ public class ApplicationConfig {
     @Bean
     public Clock systemClock() {
 
-
-        System.out.println("Hi hows u");
         return Clock.systemDefaultZone();
     }
 }
